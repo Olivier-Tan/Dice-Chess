@@ -11,6 +11,7 @@
 #define NUM_PIECES_COLOUR 6
 #define MOVE_ERROR -1
 #define VALID 1
+#define KNIGHT_SQUARES 8
 
 #include <stdbool.h>
 
@@ -40,20 +41,20 @@ struct square {
 
 char checkColour(int row);
 void boardInit(char board[8][8]);
-int playerMove(char board[8][8], char move[5], int player);
+int playerMove(char board[8][8], char move[6], int player);
 void printConsoleBoard(char board[8][8]);
 void callSquare(int row, int col);
 int checkWin(char board[8][8]);
 
-int checkPawnMove(char board[8][8], char move[5], bool take, int player);
-int checkKnightMove(char board[8][8], char move[5], bool take, int player);
-int checkBishopMove(char board[8][8], char move[5], bool take, int player);
-int checkRookMove(char board[8][8], char move[5], bool take, int player);
-int checkQueenMove(char board[8][8], char move[5], bool take, int player);
-int checkKingMove(char board[8][8], char move[5], bool take, int player);
+int checkPawnMove(char board[8][8], char move[6], bool take, int player);
+int checkKnightMove(char board[8][8], char move[6], bool take, int player);
+int checkBishopMove(char board[8][8], char move[6], bool take, int player);
+int checkRookMove(char board[8][8], char move[6], bool take, int player);
+int checkQueenMove(char board[8][8], char move[6], bool take, int player);
+int checkKingMove(char board[8][8], char move[6], bool take, int player);
 
-void playMove(char board[8][8], char move[5]);
+void playMove(char board[8][8], char move[6]);
 
-struct square moveToCoords(char board[8][8], char move[5], bool take);
+struct square moveToCoords(char board[8][8], char move[6], bool take);
 
 #endif

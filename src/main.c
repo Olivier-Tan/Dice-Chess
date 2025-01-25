@@ -17,7 +17,7 @@ int main(void) {
     int player = 0;
 
     while (checkWin(chessBoard)) {
-        char move[5];
+        char move[6];
 
         fgets(move, sizeof(move), stdin);
 
@@ -27,6 +27,8 @@ int main(void) {
             printf("That is not a valid move, please try again!\n");
             continue;
         }
+    
+        printConsoleBoard(chessBoard);
 
         if (player == WHITE) {
             player = BLACK;
@@ -151,7 +153,7 @@ int checkWin(char board[8][8]) {
     return FALSE;
 }
 
-int playerMove(char board[8][8], char move[5], int player) {
+int playerMove(char board[8][8], char move[6], int player) {
     char Pieces[6] = {'P', 'N', 'B', 'R', 'Q', 'K'};
     char boardFiles[8] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
@@ -178,19 +180,29 @@ int playerMove(char board[8][8], char move[5], int player) {
 
     // if (!flag) return MOVE_ERROR;
 
+        for (int i = 0; i < NUM_PIECES_COLOUR; i++) {
+            if (move[0] == Pieces[i]) {
+                flag = 1;
+                piece = Pieces[i];
+                break;
+            }
+        }
+
     flag = 0;
 
     int pawnFlag = 0;
 
-    if (strlen(move) < 4) {
-        printf("bleh");
-        for (int i = 0; i < BOARD_WIDTH; i++) {
-            if (move[0] == boardFiles[i]) {
+    
+    for (int i = 0; i < BOARD_WIDTH; i++) {
+        if (move[0] == boardFiles[i]) {
+            if (strlen(move) == 5) {
                 pawnFlag = 1;
+            } else {
                 return checkPawnMove(board, move, FALSE, player);
             }
         }
     }
+    
     printf("%d\n", strlen(move));
 
     if (pawnFlag) {
@@ -230,11 +242,8 @@ int playerMove(char board[8][8], char move[5], int player) {
 
     int moveRank = move[filePosition + 1] - '0';
 
-    printf("moverank error");
-
     if (moveRank < 1 || moveRank > 8) return MOVE_ERROR;
 
-    printf("pawn move shouldnt get here");
 
     if (!flag) return MOVE_ERROR;
     
@@ -253,12 +262,12 @@ int playerMove(char board[8][8], char move[5], int player) {
     return VALID;
 }
 
-int checkPawnMove(char board[8][8], char move[5], bool take, int player) {
+int checkPawnMove(char board[8][8], char move[6], bool take, int player) {
     struct square coords = moveToCoords(board, move, take);
 
     printf("row: %d\n", coords.row);
     printf("col: %d\n", coords.col);
-    
+
     if (take) {
         if (board[coords.row][coords.col] == EMPTY) {
                 return MOVE_ERROR;
@@ -273,6 +282,8 @@ int checkPawnMove(char board[8][8], char move[5], bool take, int player) {
                 return MOVE_ERROR;
             }
 
+            board[coords.row + 1][move[0] - 'a'] = EMPTY;
+
         } else {
             if (board[coords.row - 1][move[0] - 'a'] != PAWN_BLACK) {
                 return MOVE_ERROR;
@@ -281,6 +292,8 @@ int checkPawnMove(char board[8][8], char move[5], bool take, int player) {
             if (board[coords.row][coords.col] > 6) {
                 return MOVE_ERROR;
             }
+
+            board[coords.row + 1][move[0] - 'a'] = EMPTY;
         }
     } else {
 
@@ -288,43 +301,102 @@ int checkPawnMove(char board[8][8], char move[5], bool take, int player) {
                 return MOVE_ERROR;
         }
         if (!player) {
-            if (board[coords.row + 1][move[0] - 'a'] != PAWN_WHITE && 
-                board[coords.row + 2][move[0] - 'a'] != PAWN_WHITE) {
-                    printf("bleh1");
+            if (board[coords.row + 2][move[0] - 'a'] == PAWN_WHITE) {
+                board[coords.row + 2][move[0] - 'a'] = EMPTY;
+            } else if (board[coords.row + 1][move[0] - 'a'] == PAWN_WHITE) {
+                board[coords.row + 1][move[0] - 'a'] = EMPTY;
+            } else {
                 return MOVE_ERROR;
             }
         } else {
-            if (board[coords.row - 1][move[0] - 'a'] != PAWN_BLACK &&
-                board[coords.row - 2][move[0] - 'a'] != PAWN_BLACK) {
-                    printf("bleh2");
+            if (board[coords.row - 1][move[0] - 'a'] == PAWN_BLACK) {
+                board[coords.row - 1][move[0] - 'a'] = EMPTY;
+            } else if (board[coords.row - 2][move[0] - 'a'] == PAWN_BLACK) {
+                board[coords.row - 2][move[0] - 'a'] = EMPTY;
+            } else {
                 return MOVE_ERROR;
-            }
+            }    
         }
+    }
+
+    if (player) {
+        board[coords.row][coords.col] = PAWN_BLACK;
+    } else {
+        board[coords.row][coords.col] = PAWN_WHITE;
     }
 
     return VALID;
 }
 
-int checkKnightMove(char board[8][8], char move[5], bool take, int player) {
+int checkKnightMove(char board[8][8], char move[6], bool take, int player) {
+    struct square coords = moveToCoords(board, move, take);
+
+    // origin of the knight
+    struct square possibleSquares[8] = {{coords.row - 2, coords.col - 1}, 
+                                        {coords.row - 1, coords.col - 2}, 
+                                        {coords.row + 1, coords.col - 2}, 
+                                        {coords.row + 2, coords.col - 1},
+                                        {coords.row + 2, coords.col + 1},
+                                        {coords.row + 1, coords.col + 2},
+                                        {coords.row - 1, coords.col + 2},
+                                        {coords.row - 2, coords.col + 1}};
+
+    struct square knightOrigin;
+
+    knightOrigin.row = -1;
+    knightOrigin.col = -1;
+
+    int shift = 0;
+
+    if (player) {
+        shift += 6;
+    }
+
+    for (int i = 0; i < KNIGHT_SQUARES; i++) {
+        struct square possibleSquare = possibleSquares[i];
+
+        if (possibleSquare.row < 0 || possibleSquare.row > 7) continue;
+        if (possibleSquare.col < 0 || possibleSquare.col > 7) continue;
+
+        if (board[possibleSquare.row][possibleSquare.col] == 
+            KNIGHT_WHITE + shift) {
+                knightOrigin.row = possibleSquare.row;
+                knightOrigin.col = possibleSquare.col;
+                break;
+            }
+    }
+
+    if (knightOrigin.row == -1) {
+        return MOVE_ERROR;
+    } else {
+        board[knightOrigin.row][knightOrigin.col] = EMPTY;
+        board[coords.row][coords.col] = KNIGHT_WHITE + shift;
+    }
+
+    // to check if there are multiple possible knights
+    // struct square Knight[2];
+    // to implement later as complexity is added
+
+    return VALID;
 
 }
-int checkBishopMove(char board[8][8], char move[5], bool take, int player) {
+int checkBishopMove(char board[8][8], char move[6], bool take, int player) {
 
 }
 
-int checkRookMove(char board[8][8], char move[5], bool take, int player) {
+int checkRookMove(char board[8][8], char move[6], bool take, int player) {
 
 }
 
-int checkQueenMove(char board[8][8], char move[5], bool take, int player) {
+int checkQueenMove(char board[8][8], char move[6], bool take, int player) {
 
 }
 
-int checkKingMove(char board[8][8], char move[5], bool take, int player) {
+int checkKingMove(char board[8][8], char move[6], bool take, int player) {
 
 }
 
-struct square moveToCoords(char board[8][8], char move[5], bool take) {
+struct square moveToCoords(char board[8][8], char move[6], bool take) {
     struct square coords;
 
     int shift = 1;
@@ -341,6 +413,6 @@ struct square moveToCoords(char board[8][8], char move[5], bool take) {
     return coords;
 }
 
-void playMove(char board[8][8], char move[5]) {
+void playMove(char board[8][8], char move[6]) {
 
 }
